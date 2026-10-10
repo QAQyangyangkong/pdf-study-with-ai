@@ -1,0 +1,17 @@
+.venv/
+.cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+output/
+tmp/
+.coverage
+*.sqlite3*
+*.dpapi
+*.pdf
+*.docx
+*.png
+*.jpg
+*.jpeg
