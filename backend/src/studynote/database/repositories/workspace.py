@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 SCHEMA = """
 CREATE TABLE documents (
  id INTEGER PRIMARY KEY, title TEXT NOT NULL, kind TEXT NOT NULL,
@@ -43,10 +43,16 @@ class Database:
             if version > SCHEMA_VERSION:
                 raise ValueError("数据库由较新版本创建，请使用较新版本的软件。")
             if version == 0:
-                # DDL and schema version form one transaction.
-                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA + "\nCOMMIT;")
-        if version in (0, 1):
-            from ..migrations.v2 import upgrade
+                # A fresh workspace has no legacy data to back up. All tables,
+                # indexes, triggers and its version become visible atomically.
+                from ..migrations.v2 import apply as apply_v2
+                from ..migrations.v3 import apply as apply_v3
+                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA)
+                apply_v2(connection)
+                apply_v3(connection)
+                connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+        if version in (1, 2):
+            from ..migrations.v3 import upgrade
             upgrade(self.path)
 
     @contextmanager
@@ -119,12 +125,24 @@ class Database:
             "WHERE nt.note_id=? ORDER BY t.name", (note_id,))]
 
     def notes(self, search="", topic=""):
-        # Literal substring matching (not SQL wildcard interpretation).
+        # Search is always a literal phrase: neither SQL wildcards nor MATCH
+        # Boolean operators supplied by the user are interpreted as commands.
+        # FTS5 trigram cannot match 1-2 characters, so retain a literal scan for
+        # those useful Chinese queries (and unusual embedded-NUL queries).
+        if len(search) >= 3 and "\x00" not in search:
+            phrase = '"' + search.replace('"', '""') + '"'
+            return self.rows(
+                "SELECT n.* FROM notes_fts JOIN notes n ON n.id=notes_fts.rowid "
+                "WHERE notes_fts MATCH ? "
+                "AND (?='' OR EXISTS(SELECT 1 FROM note_topics nt JOIN topics t ON t.id=nt.topic_id "
+                "WHERE nt.note_id=n.id AND t.name=?)) "
+                "ORDER BY bm25(notes_fts,3.0,1.0),n.updated_at DESC,n.id DESC",
+                (phrase, topic, topic))
         return self.rows(
-            "SELECT DISTINCT n.* FROM notes n LEFT JOIN note_topics nt ON nt.note_id=n.id "
-            "LEFT JOIN topics t ON t.id=nt.topic_id WHERE "
-            "(?='' OR instr(n.title,?)>0 OR instr(n.body,?)>0) "
-            "AND (?='' OR t.name=?) ORDER BY n.updated_at DESC, n.id DESC",
+            "SELECT n.* FROM notes n WHERE "
+            "(?='' OR instr(lower(n.title),lower(?))>0 OR instr(lower(n.body),lower(?))>0) "
+            "AND (?='' OR EXISTS(SELECT 1 FROM note_topics nt JOIN topics t ON t.id=nt.topic_id "
+            "WHERE nt.note_id=n.id AND t.name=?)) ORDER BY n.updated_at DESC,n.id DESC",
             (search, search, search, topic, topic))
 
     def spent(self, day=None):

@@ -15,6 +15,17 @@ COMMIT;
 """
 
 
+def apply(connection):
+    """Apply v2 inside the caller's migration transaction."""
+    connection.execute("""CREATE TABLE note_versions (
+      id INTEGER PRIMARY KEY, note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+      title TEXT NOT NULL, body TEXT NOT NULL, sources TEXT NOT NULL,
+      created_at TEXT NOT NULL)""")
+    connection.execute(
+        "INSERT INTO note_versions(note_id,title,body,sources,created_at) "
+        "SELECT id,title,body,sources,updated_at FROM notes")
+
+
 def upgrade(path):
     backups = path.parent / "backups"
     backups.mkdir(exist_ok=True)

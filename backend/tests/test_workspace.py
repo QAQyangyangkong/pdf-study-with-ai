@@ -22,6 +22,7 @@ class WorkspaceTests(unittest.TestCase):
         self.db = self.workspace.db
 
     def tearDown(self):
+        self.workspace.keys.delete()
         self.temp.cleanup()
 
     def test_note_update_keeps_source_and_topics_join_across_books(self):
@@ -90,13 +91,15 @@ class WorkspaceTests(unittest.TestCase):
         with closing(sqlite3.connect(self.db.path)) as connection:
             self.assertEqual(connection.execute("PRAGMA user_version").fetchone()[0], 999)
 
-    @unittest.skipUnless(os.name == "nt", "Windows DPAPI")
-    def test_dpapi_round_trip_is_ciphertext_and_can_be_deleted(self):
+    @unittest.skipUnless(os.name == "nt", "Windows Credential Manager")
+    def test_system_credential_round_trip_without_local_secret_file(self):
         keys = KeyStore(self.workspace.directory)
         key = "local-test-secret-123"
         keys.save(key)
-        self.assertNotIn(key.encode(), keys.path.read_bytes())
+        self.assertFalse(keys.path.exists())
+        self.assertTrue(keys.is_configured())
         self.assertEqual(keys.load(), key)
+        self.assertEqual(KeyStore(self.workspace.directory).load(), key)
         keys.save("replacement-test-secret")
         self.assertEqual(keys.load(), "replacement-test-secret")
         keys.delete()

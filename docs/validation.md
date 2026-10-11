@@ -1,12 +1,12 @@
 # 验证记录
 
-架构迁移保留原有文档、预算、来源与导出测试，增加 IPC、旧库迁移、React 和完整端到端覆盖。
+架构迁移保留原有文档、预算、来源与导出测试，补齐规划中的编辑、PDF、搜索与凭据实现，并覆盖实际打包行为。
 
-- Python 业务 / IPC / 开发桥接授权：39 项。
-- 旧数据库迁移与目录兼容：2 项。
-- React / 共享协议：8 项。
-- Playwright：PDF → 分章 → 缓存生成 → 编辑 → 主题 → Obsidian 导出，检查 PDF canvas 和页面运行错误。
+- Python 业务 / IPC / 开发桥接授权：57 项，包含 PyMuPDF、FTS5 和真实 Windows 凭据迁移。
+- 旧数据库迁移与目录兼容：4 项，覆盖 v1/v2 → v3、升级前备份与失败回滚。
+- React / 编辑器 / 共享协议：19 项，包含 Markdown 往返、特殊语法原文保留、版本恢复和过期搜索响应。
+- Playwright：1 项完整流程，PDF → 分章 → 缓存生成 → 富文本加粗与待办勾选 → Markdown 保存 → FTS5 搜索 → 主题 → Obsidian 导出文件内容；检查待办同一行布局、PDF canvas 和页面运行错误。
 - TypeScript 类型、生产前端构建、Python 编译。
-- PyInstaller 打包与隔离启动；Tauri 原生 WebView → Rust → Python 启动验证。
+- PyInstaller 打包后的真实 PDF 导入、指定单页预览、分章页数及文字、原文件哈希与 FTS5 搜索；Tauri 原生 WebView → Rust → Python schema v3 启动验证。
 
-人工生成两页 PDF 用作夹具，测试隔离目录，不调用付费 API。Tabbit 检查实际首页和阅读布局。真实模型质量、账户计费、首次安装/卸载、签名和更新不属于本次验证范围。
+人工生成两页 PDF 用作夹具，测试隔离目录，不调用付费 API。3 份真实教材均完成导入与第 11–12 页分章，原 PDF 的 SHA256 不变。Tabbit 检查实际界面布局。真实模型质量、账户计费、首次安装/卸载、签名和更新不属于本次验证范围。

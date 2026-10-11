@@ -1,25 +1,15 @@
 from pathlib import Path
-from pypdf import PdfWriter
-from pypdf.generic import DictionaryObject, NameObject, DecodedStreamObject
+import pymupdf
 
 
 def make_pdf(path: Path, texts=("Ohm law V = I R", "Circuit current", "Practice questions"), bookmarks=False):
-    writer = PdfWriter()
-    for text in texts:
-        page = writer.add_blank_page(width=300, height=400)
-        font = DictionaryObject({NameObject("/Type"): NameObject("/Font"),
-                                 NameObject("/Subtype"): NameObject("/Type1"),
-                                 NameObject("/BaseFont"): NameObject("/Helvetica")})
-        page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject({
-            NameObject("/F1"): writer._add_object(font)})})
-        stream = DecodedStreamObject()
-        stream.set_data(f"BT /F1 12 Tf 20 350 Td ({text}) Tj ET".encode("ascii"))
-        page[NameObject("/Contents")] = writer._add_object(stream)
-    if bookmarks:
-        writer.add_outline_item("Chapter One", 1)
-        writer.add_outline_item("Chapter Two", 2)
-    with path.open("wb") as file:
-        writer.write(file)
+    with pymupdf.open() as document:
+        for text in texts:
+            page = document.new_page(width=300, height=400)
+            page.insert_text((20, 50), text, fontsize=12)
+        if bookmarks:
+            document.set_toc([[1, "Chapter One", 2], [1, "Chapter Two", 3]])
+        document.save(path)
     return path
 
 

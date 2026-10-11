@@ -1,11 +1,12 @@
 import { cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react';
-import { BookOpen, X } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from './ui/dialog';
 
 export function Empty({title,description,action}:{title:string;description:string;action?:ReactNode}) {
   return <div className="empty"><div className="empty-icon"><BookOpen size={30}/></div><h3>{title}</h3><p>{description}</p>{action}</div>;
 }
 export function Modal({title,children,onClose}:{title:string;children:ReactNode;onClose:()=>void}) {
-  return <div className="modal-scrim"><section role="dialog" aria-modal="true" aria-label={title} className="modal"><header><h2>{title}</h2><button className="icon-button" aria-label="关闭弹窗" onClick={onClose}><X size={20}/></button></header>{children}</section></div>;
+  return <Dialog open onOpenChange={open=>{if(!open)onClose();}}><DialogContent aria-describedby={undefined}><DialogTitle className="mb-6 pr-8 text-xl font-semibold">{title}</DialogTitle>{children}</DialogContent></Dialog>;
 }
 export function Field({label,children,hint}:{label:string;children:ReactNode;hint?:string}) {
   const id=useId();

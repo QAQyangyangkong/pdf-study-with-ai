@@ -1,55 +1,55 @@
-"""Windows DPAPI: no plaintext fallback and no key logging."""
-import ctypes
+"""System credentials with one-time migration from the previous DPAPI file."""
+import hashlib
 import os
-from ctypes import wintypes
 from pathlib import Path
 
-
-class Blob(ctypes.Structure):
-    _fields_ = [("size", wintypes.DWORD), ("data", ctypes.POINTER(ctypes.c_ubyte))]
-
-
-def _crypt(value: bytes, decrypt: bool = False) -> bytes:
-    if os.name != "nt":
-        raise RuntimeError("密钥安全保存目前仅支持 Windows。")
-    crypt32 = ctypes.WinDLL("crypt32", use_last_error=True)
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    kernel32.LocalFree.argtypes = [ctypes.c_void_p]
-    kernel32.LocalFree.restype = ctypes.c_void_p
-    buffer = ctypes.create_string_buffer(value)
-    source = Blob(len(value), ctypes.cast(buffer, ctypes.POINTER(ctypes.c_ubyte)))
-    target = Blob()
-    function = crypt32.CryptUnprotectData if decrypt else crypt32.CryptProtectData
-    function.argtypes = [ctypes.POINTER(Blob), ctypes.c_void_p, ctypes.POINTER(Blob),
-                         ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD,
-                         ctypes.POINTER(Blob)]
-    function.restype = wintypes.BOOL
-    if not function(ctypes.byref(source), None, None, None, None, 1, ctypes.byref(target)):
-        raise RuntimeError("Windows 无法读取或保存密钥，请在当前账号重新配置。")
-    try:
-        return ctypes.string_at(target.data, target.size)
-    finally:
-        kernel32.LocalFree(ctypes.cast(target.data, ctypes.c_void_p))
+from .legacy_dpapi import _crypt
+from .windows_credentials import MAX_CREDENTIAL_BYTES, WindowsCredentialBackend
 
 
 class KeyStore:
-    def __init__(self, directory: Path):
-        self.path = directory / "api-key.dpapi"
+    def __init__(self, directory: Path, backend=None):
+        directory = Path(directory).resolve()
+        # A backup restored elsewhere must not silently reuse another workspace's key.
+        identity = os.path.normcase(str(directory)).encode("utf-8")
+        self.target = "StudyNote/" + hashlib.sha256(identity).hexdigest()[:32] + "/api-key"
+        self.path = directory / "api-key.dpapi"  # Legacy migration source only.
+        self.backend = backend or WindowsCredentialBackend()
+
+    @staticmethod
+    def _validate(key):
+        key = key.strip()
+        if not key or any(character.isspace() for character in key):
+            raise ValueError("API Key 不能为空或包含空白字符。")
+        if len(key.encode("utf-8")) > MAX_CREDENTIAL_BYTES:
+            raise ValueError("API Key 超过系统凭据长度限制。")
+        return key
+
+    def is_configured(self):
+        return self.backend.read(self.target) is not None or self.path.exists()
 
     def save(self, key: str):
-        key = key.strip()
-        if not key or any(c.isspace() for c in key):
-            raise ValueError("API Key 不能为空或包含空白字符。")
-        encrypted = _crypt(key.encode("utf-8"))
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = self.path.with_suffix(".tmp")
-        temporary.write_bytes(encrypted)
-        temporary.replace(self.path)
+        key = self._validate(key)
+        self.backend.write(self.target, key.encode("utf-8"))
+        # Remove a legacy file only after the system write succeeded.
+        self.path.unlink(missing_ok=True)
 
     def load(self) -> str:
+        secret = self.backend.read(self.target)
+        if secret is not None:
+            try:
+                return self._validate(secret.decode("utf-8"))
+            except (UnicodeDecodeError, ValueError):
+                raise RuntimeError("系统凭据无效，请重新配置 API Key。") from None
         if not self.path.exists():
             raise ValueError("请先在 AI 设置中保存 API Key。")
-        return _crypt(self.path.read_bytes(), decrypt=True).decode("utf-8")
+        try:
+            key = self._validate(_crypt(self.path.read_bytes(), decrypt=True).decode("utf-8"))
+        except (RuntimeError, UnicodeDecodeError, ValueError):
+            raise RuntimeError("旧版凭据无法迁移，请在当前 Windows 账号重新配置 API Key。") from None
+        self.save(key)
+        return key
 
     def delete(self):
+        self.backend.delete(self.target)
         self.path.unlink(missing_ok=True)

@@ -14,5 +14,5 @@ if (-not $taskProcess.WaitForExit(45000)) {
 }
 if ($taskProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $taskReport)) { throw 'Native UI smoke failed.' }
 $taskResult = Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
-if (-not $taskResult.ok -or -not $taskResult.frontend_ready) { throw 'Native UI report failed validation.' }
-Write-Host 'React WebView → Rust IPC → packaged Python sidecar verified.'
+if (-not $taskResult.ok -or -not $taskResult.frontend_ready -or $taskResult.workspace.schema_version -ne 3) { throw 'Native UI report failed validation.' }
+Write-Host 'React WebView, Rust IPC and packaged Python schema v3 verified.'

@@ -6,7 +6,7 @@ import type { Workspace } from '../types';
 const mock=vi.hoisted(()=>({rpc:vi.fn()}));
 vi.mock('../services/backend',()=>({rpc:mock.rpc,pickFile:vi.fn(),pickDestination:vi.fn()}));
 vi.mock('../components/PdfPage',()=>({PdfPage:()=>null}));
-const base:Workspace={version:'0.2.0',schema_version:2,data_directory:'test-data',onboarding_complete:false,
+const base:Workspace={version:'0.2.0',schema_version:3,data_directory:'test-data',onboarding_complete:false,
  documents:[],chapters:[],notes:[],topics:[],spent:0,key_configured:false,
  config:{base_url:'https://api.deepseek.com',model:'deepseek-flash',secondary_model:'',daily_budget:1,input_price:.3,output_price:1.2,secondary_input_price:1.32,secondary_output_price:3.96,max_output_tokens:2000}};
 afterEach(()=>{cleanup();mock.rpc.mockReset();});

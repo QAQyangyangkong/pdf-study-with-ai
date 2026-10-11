@@ -1,12 +1,12 @@
 # StudyNote
 
-本地优先的 AI 学习笔记桌面应用雏形，采用 **React + TypeScript + Tauri 2 + Python Sidecar + SQLite**。当前仓库即 StudyNote 项目根目录。
+本地优先的 AI 学习笔记桌面应用雏形，采用 **React + TypeScript + shadcn/ui + Tailwind CSS + Tiptap + Tauri 2 + Python Sidecar + PyMuPDF + SQLite FTS5**。当前仓库即 StudyNote 项目根目录。
 
 ## 已实现
 
 - 首次引导、学习首页、教材导入、PDF 页面阅读、书签提示和按页分章。
-- 主模型与可选第二模型、Windows DPAPI 加密 Key、发送前预览、预算、缓存与后台生成。
-- Markdown 笔记、历史版本恢复、跨教材主题聚合与文字搜索。
+- 主模型与可选第二模型、Windows 系统凭据管理器保存 Key、发送前预览、预算、缓存与后台生成。
+- Tiptap 富文本和 Markdown 原文编辑、历史版本恢复、跨教材主题聚合与 SQLite FTS5 搜索。
 - Obsidian 导出、ZIP 备份、旧版数据库自动备份和升级。
 
 试卷分析页面按规划保留为后续入口。OCR、语义检索、知识图谱、备份恢复向导、自动更新和发布签名尚未实现。
@@ -35,6 +35,8 @@ pnpm build:desktop  # 检查、Python 打包、Tauri 安装包和原生启动验
 ## 数据与隐私
 
 新安装使用 `%LOCALAPPDATA%\StudyNote`；检测到旧版 `%LOCALAPPDATA%\StudyDesk\study.sqlite3` 时沿用旧目录。可用 STUDYNOTE_DATA_DIR 指定隔离目录。导入复制原文件，不改写教材。仅在确认 AI 请求后发送预览文本。Key 不进入前端响应、日志或 ZIP 备份。
+
+API Key 保存在当前 Windows 用户的系统凭据管理器，每个工作区使用独立凭据。旧版 DPAPI 文件首次读取时自动迁移，系统保存成功后删除旧文件。数据库 v1/v2 自动备份并升级至 v3，重建已有笔记的 FTS5 索引。
 
 费用使用可编辑的美元单价与保守 UTF-8 估算，不能替代服务商账单；请按实际账户更新配置。超时或未知计费保留预估费用，避免无限重试。
 

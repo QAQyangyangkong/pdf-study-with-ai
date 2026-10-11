@@ -8,7 +8,7 @@ import time
 import unittest
 from pathlib import Path
 
-from pypdf import PdfReader
+import pymupdf
 from studynote.ai.generation import AIService
 from studynote.core.workspace import Workspace
 from studynote.ipc.router import Router
@@ -26,6 +26,7 @@ class IPCTests(unittest.TestCase):
 
     def tearDown(self):
         self.router.close()
+        self.workspace.keys.delete()
         self.temp.cleanup()
 
     def call(self,method,params=None):
@@ -62,9 +63,11 @@ class IPCTests(unittest.TestCase):
     def test_reader_returns_exact_requested_page(self):
         book=self.call('documents.import',{'path':str(make_pdf(self.root/'book.pdf')),'kind':'textbook'})['document_id']
         response=self.call('reader.page',{'document_id':book,'page':2})
-        reader=PdfReader(io.BytesIO(base64.b64decode(response['pdf_base64'])))
-        self.assertEqual(len(reader.pages),1)
-        self.assertEqual(reader.pages[0].extract_text(),'Circuit current')
+        with pymupdf.open(stream=base64.b64decode(response['pdf_base64']), filetype='pdf') as pdf:
+            self.assertEqual(pdf.page_count,1)
+            self.assertEqual(pdf[0].get_text().strip(),'Circuit current')
+        self.assertEqual(response['page'],2)
+        self.assertEqual(response['total'],3)
 
     def test_invalid_protocol_method_unknown_fields_and_ids_are_rejected(self):
         for request in [[],{'protocol_version':2,'id':'a','method':'workspace.get','params':{}},

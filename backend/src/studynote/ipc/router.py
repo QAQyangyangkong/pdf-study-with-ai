@@ -1,9 +1,8 @@
 import base64
-import io
 import secrets
 from dataclasses import replace
 from pathlib import Path
-from pypdf import PdfWriter
+import pymupdf
 
 from .. import __version__
 from ..ai.generation import chapter_prompt, exam_prompt
@@ -76,7 +75,7 @@ class Router:
         return {"version": __version__, "schema_version": SCHEMA_VERSION, "data_directory": str(self.workspace.directory),
                 "onboarding_complete": self.db.setting("onboarding_complete", False),
                 "documents": documents, "chapters": chapters, "notes": search_notes(self.db), "topics": topics(self.db),
-                "config": self.workspace.config().to_dict(), "key_configured": self.workspace.keys.path.exists(), "spent": self.db.spent()}
+                "config": self.workspace.config().to_dict(), "key_configured": self.workspace.keys.is_configured(), "spent": self.db.spent()}
 
     def dispatch(self, method, p):
         if method == "workspace.get":
@@ -93,16 +92,15 @@ class Router:
             return {"chapter_id": self.workspace.documents.create_chapter(number(p,"document_id"), text(p,"title"), number(p,"start_page"), number(p,"end_page"))}
         if method == "reader.page":
             document = self.db.get("documents", number(p,"document_id"))
-            reader = read_pdf(managed_path(self.workspace.directory, document["path"]))
             page = number(p,"page")
-            validate_range(page,page,len(reader.pages))
-            writer = PdfWriter()
-            writer.add_page(reader.pages[page-1])
-            stream = io.BytesIO()
-            writer.write(stream)
-            if stream.tell() > 8*1024*1024:
+            with read_pdf(managed_path(self.workspace.directory, document["path"])) as pdf, pymupdf.open() as preview:
+                validate_range(page,page,pdf.page_count)
+                total = pdf.page_count
+                preview.insert_pdf(pdf,from_page=page-1,to_page=page-1)
+                contents = preview.tobytes(garbage=3,deflate=True)
+            if len(contents) > 8*1024*1024:
                 raise ValueError("当前页过大，暂不能内嵌预览。")
-            return {"pdf_base64": base64.b64encode(stream.getvalue()).decode("ascii"), "page": page, "total": len(reader.pages)}
+            return {"pdf_base64": base64.b64encode(contents).decode("ascii"), "page": page, "total": total}
         if method == "notes.save":
             tags = p["tags"]
             if not isinstance(tags,list) or len(tags)>50 or any(not isinstance(tag,str) or len(tag)>100 for tag in tags):
@@ -126,7 +124,7 @@ class Router:
             if key:
                 self.workspace.keys.save(key)
             self.db.set_setting("ai",config.to_dict())
-            return {"saved": True, "key_configured": self.workspace.keys.path.exists()}
+            return {"saved": True, "key_configured": self.workspace.keys.is_configured()}
         if method == "settings.delete_key":
             self.workspace.keys.delete()
             return {"deleted": True}

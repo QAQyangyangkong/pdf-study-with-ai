@@ -14,4 +14,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Sidecar build failed.' }
 Copy-Item -LiteralPath dist\sidecar\studynote-backend.exe -Destination apps\desktop\src-tauri\binaries\studynote-backend-x86_64-pc-windows-msvc.exe
 & dist\sidecar\studynote-backend.exe --smoke-test --data-dir tmp\sidecar-smoke | Out-File -Encoding utf8 tmp\sidecar-smoke.json
 if ($LASTEXITCODE -ne 0) { throw 'Packaged sidecar smoke test failed.' }
+& .\.venv\Scripts\python.exe scripts\release\verify_sidecar.py dist\sidecar\studynote-backend.exe tests\fixtures\sample.pdf
+if ($LASTEXITCODE -ne 0) { throw 'Packaged PDF and search verification failed.' }
 Write-Host 'Python sidecar packaged and verified.'
