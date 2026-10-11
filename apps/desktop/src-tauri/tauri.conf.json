@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "StudyNote",
+  "version": "0.2.0",
+  "identifier": "com.studynote.desktop",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [{"label":"main","title":"StudyNote · 学习工作台","width":1280,"height":860,"minWidth":1000,"minHeight":700}],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src ipc: http://ipc.localhost blob:; frame-src blob:; object-src blob:",
+      "capabilities": ["main"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "externalBin": ["binaries/studynote-backend"],
+    "icon": ["icons/icon.ico"],
+    "windows": {"nsis":{"installMode":"currentUser","languages":["SimpChinese","English"],"displayLanguageSelector":false}}
+  }
+}

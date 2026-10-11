@@ -1,0 +1,8 @@
+import { Archive, ArrowUpRight, FolderOutput } from 'lucide-react';
+import { SectionHeading } from '../../components/ui';
+import { pickDestination, rpc } from '../../services/backend';
+
+export function Backup({directory,run}:{directory:string;run:(work:()=>Promise<unknown>,message:string)=>Promise<void>}) {
+  async function action(kind:'export'|'backup'){const destination=await pickDestination(kind);if(!destination)return;const result=await rpc<{path:string}>(kind==='export'?'export.obsidian':'backup.create',{destination});return result.path;}
+  return <><SectionHeading eyebrow="KEEP YOUR KNOWLEDGE" title="备份与导出" description="你的笔记属于你。保留一份备份，也可以带到 Obsidian 继续使用。"/><div className="backup-grid"><section className="panel export-card"><div className="empty-icon"><FolderOutput size={30}/></div><h2>导出到 Obsidian</h2><p>导出 Markdown 笔记、材料来源、知识主题索引和双向链接。每次导出创建新目录，不覆盖已有笔记。</p><button className="primary" onClick={()=>void run(async()=>{const path=await action('export');if(path)window.alert(`导出完成：\n${path}`);},'导出已完成')}>选择导出位置 <ArrowUpRight size={17}/></button></section><section className="panel export-card"><div className="empty-icon"><Archive size={30}/></div><h2>备份本地资料</h2><p>把数据库、教材和章节保存为 ZIP。API Key 不会进入备份；更换电脑后需要重新配置。</p><button className="secondary" onClick={()=>void run(async()=>{const path=await action('backup');if(path)window.alert(`备份完成：\n${path}`);},'备份已完成')}>创建完整备份 <ArrowUpRight size={17}/></button></section></div><section className="panel workspace-location"><h3>当前资料保存位置</h3><code>{directory}</code><p className="muted">恢复备份时先关闭软件，将 ZIP 解压到一个新目录，再通过数据目录参数打开。此版本暂未提供一键恢复。</p></section></>;
+}

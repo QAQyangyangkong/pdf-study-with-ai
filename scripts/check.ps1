@@ -8,11 +8,17 @@ New-Item -ItemType Directory -Force -Path $taskTemp | Out-Null
 $env:TEMP = $taskTemp
 $env:TMP = $taskTemp
 $env:PYTHONUTF8 = '1'
-$env:PYTHONPATH = Join-Path $taskRoot 'src'
-& $taskPython -m unittest discover -s tests -t . -v
+$env:PYTHONPATH = Join-Path $taskRoot 'backend\src'
+& $taskPython -m unittest discover -s backend\tests -t backend -v
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
-& $taskPython -m compileall -q src tests launcher.py
+& $taskPython -m unittest discover -s tests\migration -v
+if ($LASTEXITCODE -ne 0) { throw 'Migration tests failed.' }
+& $taskPython -m compileall -q backend\src backend\tests tests\migration
 if ($LASTEXITCODE -ne 0) { throw 'Compilation failed.' }
-& $taskPython -m study_desk --smoke-test --data-dir (Join-Path $taskTemp 'source-smoke') --report (Join-Path $taskTemp 'source-smoke.json')
-if ($LASTEXITCODE -ne 0) { throw 'Source UI smoke test failed.' }
-Write-Host 'All tests, compilation and source UI checks passed.'
+pnpm typecheck
+if ($LASTEXITCODE -ne 0) { throw 'Frontend type check failed.' }
+pnpm test
+if ($LASTEXITCODE -ne 0) { throw 'Frontend tests failed.' }
+pnpm build
+if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
+Write-Host 'Backend, migration, frontend tests and production build passed.'

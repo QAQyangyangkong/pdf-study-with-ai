@@ -1,0 +1,33 @@
+name: Windows checks and build
+on:
+  push:
+  pull_request:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.25.0'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .venv/Scripts/python.exe -m pip install -r requirements.txt -r requirements-build.txt
+          pnpm install --frozen-lockfile
+      - name: End-to-end
+        run: pnpm test:e2e
+      - name: Build and native smoke
+        run: pnpm build:desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StudyNote-Windows-x64
+          path: apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "StudyNote JSONL IPC request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "id", "method", "params"],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "id": {"type": "string", "minLength": 1, "maxLength": 80},
+    "method": {"enum": ["workspace.get", "onboarding.complete", "documents.import", "documents.bookmarks", "chapters.create", "reader.page", "notes.save", "notes.search", "notes.versions", "notes.restore", "settings.save", "settings.delete_key", "generation.prepare", "generation.start", "tasks.get", "export.obsidian", "backup.create"]},
+    "params": {"type": "object", "maxProperties": 20}
+  }
+}

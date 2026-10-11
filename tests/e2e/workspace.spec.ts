@@ -1,0 +1,36 @@
+import { test, expect } from '@playwright/test';
+import { resolve } from 'node:path';
+
+test('PDF → chapter → cached AI note → knowledge → Obsidian export',async({page})=>{
+  const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  await page.goto('/');await page.getByRole('button',{name:'先离线使用'}).click();
+  await page.getByRole('button',{name:'我的教材',exact:true}).click();
+  page.once('dialog',dialog=>dialog.accept(resolve(process.cwd(),'../../tests/fixtures/sample.pdf')));
+  await page.getByRole('button',{name:'导入教材',exact:true}).click();
+  await page.getByLabel('课程名称').fill('电路基础');await page.getByRole('button',{name:'确认导入'}).click();
+  await expect(page.getByRole('heading',{name:'sample',exact:true})).toHaveCount(2);
+  await page.getByRole('button',{name:'阅读与分章',exact:true}).last().click();
+  const canvas=page.getByLabel('PDF 页面预览');
+  await expect(canvas).toBeVisible();
+  await expect.poll(()=>canvas.evaluate(element=>(element as HTMLCanvasElement).width)).toBeGreaterThan(300);
+  const toolbar=page.getByLabel('选择教材');
+  const toolbarBox=await toolbar.boundingBox();const canvasBox=await canvas.boundingBox();
+  expect(canvasBox!.y).toBeGreaterThan(toolbarBox!.y+toolbarBox!.height);
+  await page.getByLabel('结束页',{exact:true}).fill('2');await page.getByRole('button',{name:'拆分并提取文字'}).click();
+  await page.getByRole('button',{name:'生成章节笔记'}).click();
+  await expect(page.getByRole('dialog',{name:'使用已生成的内容'})).toBeVisible();
+  await page.getByRole('button',{name:'使用缓存',exact:true}).click();
+  await expect(page.getByLabel('笔记标题',{exact:true})).toHaveValue('第一章');
+  await page.getByLabel('知识主题',{exact:true}).fill('电路基础, 欧姆定律');
+  await page.getByLabel('笔记正文',{exact:true}).fill('# 我的理解\n电流 = 电压 / 电阻。');
+  await page.getByRole('button',{name:'保存笔记'}).click();
+  await expect(page.getByRole('status')).toContainText('笔记已保存');
+  await page.getByRole('button',{name:'知识体系',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'欧姆定律',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'备份与导出',exact:true}).click();
+  const exportPath=resolve(process.cwd(),'../../tmp/e2e-export');
+  page.on('dialog',dialog=>dialog.type()==='prompt'?dialog.accept(exportPath):dialog.accept());
+  await page.getByRole('button',{name:'选择导出位置'}).click();
+  await expect(page.getByRole('status')).toContainText('导出已完成');
+  expect(errors).toEqual([]);
+});
