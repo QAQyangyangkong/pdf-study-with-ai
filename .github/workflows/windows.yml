@@ -28,7 +28,7 @@ jobs:
       - name: Build and native smoke
         shell: pwsh
         run: |
-          $env:STUDYNOTE_RELEASE_DIR = Join-Path $env:RUNNER_TEMP 'StudyNote'
+          $env:STUDYNOTE_RELEASE_DIR = Join-Path $env:GITHUB_WORKSPACE 'StudyNote'
           "STUDYNOTE_RELEASE_DIR=$env:STUDYNOTE_RELEASE_DIR" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           pnpm build:desktop
       - uses: actions/upload-artifact@v4

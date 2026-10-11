@@ -6,21 +6,21 @@ $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Set-Location -LiteralPath $taskRoot
 if (-not $OutputDirectory) {
-  $OutputDirectory = Join-Path (Split-Path $taskRoot -Parent) 'StudyNote'
-  if ([IO.Path]::GetFullPath($OutputDirectory) -eq $taskRoot) {
-    $OutputDirectory = Join-Path (Split-Path $taskRoot -Parent) 'StudyNote-release'
-  }
+  $OutputDirectory = Join-Path $taskRoot 'StudyNote'
 }
 $taskOutput = [IO.Path]::GetFullPath($OutputDirectory)
-$taskRootPrefix = $taskRoot.TrimEnd([char[]]'\/') + [IO.Path]::DirectorySeparatorChar
-if ($taskOutput.Equals($taskRoot, [StringComparison]::OrdinalIgnoreCase) -or $taskOutput.StartsWith($taskRootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-  throw 'Choose a release directory outside the source project.'
-}
 $taskPython = Join-Path $taskRoot '.venv\Scripts\python.exe'
+$env:PYTHONUTF8 = '1'
+$taskStage = Join-Path $taskRoot 'scripts\release\stage_desktop.py'
+& $taskPython $taskStage directory --root $taskRoot --output $taskOutput
+if ($LASTEXITCODE -ne 0) { throw 'Choose a release subdirectory inside the project.' }
+$taskTemp = Join-Path $taskRoot 'tmp'
+New-Item -ItemType Directory -Force -Path $taskTemp | Out-Null
+$env:TEMP = $taskTemp
+$env:TMP = $taskTemp
 $taskRelease = Join-Path $taskRoot 'apps\desktop\src-tauri\target\release'
 $taskProgram = Join-Path $taskOutput 'StudyNote.exe'
 $taskBackend = Join-Path $taskOutput 'studynote-backend.exe'
-$taskStage = Join-Path $taskRoot 'scripts\release\stage_desktop.py'
 $taskCargo = Join-Path $taskRoot '.cache\cargo\bin'
 if (Test-Path -LiteralPath $taskCargo) {
   $env:CARGO_HOME = Join-Path $taskRoot '.cache\cargo'
@@ -53,7 +53,7 @@ if ($Mode -in @('installer', 'all')) {
   $taskInstallerName = "$($taskConfig.productName)_$($taskConfig.version)_x64-setup.exe"
   $taskInstaller = Join-Path $taskRelease "bundle\nsis\$taskInstallerName"
   & $taskPython $taskStage installer --source $taskInstaller --output (Join-Path $taskOutput 'installers')
-  if ($LASTEXITCODE -ne 0) { throw 'External installer staging failed.' }
+  if ($LASTEXITCODE -ne 0) { throw 'Installer staging failed.' }
   $taskPreviousRootInstaller = Join-Path $taskRoot $taskInstallerName
   if (Test-Path -LiteralPath $taskPreviousRootInstaller -PathType Leaf) {
     Remove-Item -LiteralPath $taskPreviousRootInstaller

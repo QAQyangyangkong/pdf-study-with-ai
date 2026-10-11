@@ -41,6 +41,50 @@ class DesktopReleaseTests(unittest.TestCase):
         installer.write_bytes(b"installer\x00\xff-content")
         return installer
 
+    def test_release_directory_stays_within_project_before_any_files_are_written(self):
+        project = self.root / 'project'
+        project.mkdir()
+        default = release.release_directory(project)
+        self.assertEqual(default, project / 'StudyNote')
+        self.assertFalse(default.exists())
+        nested = project / 'releases' / 'StudyNote'
+        self.assertEqual(release.release_directory(project, nested), nested)
+        self.assertFalse(nested.exists())
+        for outside in (project, self.root / 'project-extra', project / '..' / 'escaped'):
+            with self.subTest(path=outside):
+                with self.assertRaisesRegex(ValueError, '项目文件夹内'):
+                    release.release_directory(project, outside)
+                result = subprocess.run(
+                    [sys.executable, str(SCRIPT), 'directory', '--root', str(project), '--output', str(outside)],
+                    capture_output=True, text=True, encoding='utf-8',
+                    env={**os.environ, 'PYTHONUTF8': '1'})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('项目文件夹内', result.stderr)
+        self.assertEqual(list(project.iterdir()), [])
+        self.assertFalse((self.root / 'project-extra').exists())
+        self.assertFalse((self.root / 'escaped').exists())
+        outside = self.root / 'linked-outside'
+        outside.mkdir()
+        marker = outside / 'keep.txt'
+        marker.write_bytes(b'preserve outside files')
+        link = project / 'StudyNote'
+        if os.name == 'nt':
+            def literal(path):
+                return "'" + str(path).replace("'", "''") + "'"
+            created = subprocess.run(
+                ['powershell', '-NoProfile', '-Command',
+                 f"New-Item -ItemType Junction -Path {literal(link)} -Target {literal(outside)} | Out-Null"],
+                capture_output=True, text=True)
+            self.assertEqual(created.returncode, 0, created.stderr)
+        else:
+            link.symlink_to(outside, target_is_directory=True)
+        for output in (None, link, link / 'nested'):
+            with self.subTest(linked_output=output):
+                with self.assertRaisesRegex(ValueError, '项目文件夹内'):
+                    release.release_directory(project, output)
+        self.assertEqual(marker.read_bytes(), b'preserve outside files')
+        self.assertEqual([path.name for path in outside.iterdir()], ['keep.txt'])
+
     def test_portable_renames_exact_binaries_writes_bom_guide_and_preserves_unrelated_files(self):
         (self.source / "study.sqlite3").write_bytes(b"private database")
         (self.source / "api-key.dpapi").write_bytes(b"private encrypted key")

@@ -20,6 +20,7 @@ tmp/
 node_modules/
 target/
 /StudyNote_*-setup.exe
+/StudyNote/
 *.tsbuildinfo
 apps/desktop/src-tauri/gen/
 .env

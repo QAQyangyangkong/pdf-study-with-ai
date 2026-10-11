@@ -17,8 +17,9 @@ class UserGuideTests(unittest.TestCase):
         filename = f"{config['productName']}_{config['version']}_x64-setup.exe"
         self.assertIn(filename, self.readme)
         self.assertIn(f"{config['productName']}.exe", self.readme)
-        self.assertIn('`D:\\StudyNote`', self.readme)
-        self.assertIn('`D:\\StudyNote\\installers`', self.readme)
+        self.assertIn('`D:\\pdf分割\\StudyNote`', self.readme)
+        self.assertIn('`D:\\pdf分割\\StudyNote\\installers`', self.readme)
+        self.assertNotIn('D:\\StudyNote', self.readme)
         self.assertIn('studynote-backend.exe', self.readme)
         self.assertNotIn('本机安装文件就在 **`D:\\pdf分割`', self.readme)
         self.assertIn('开始菜单', self.readme)
@@ -59,6 +60,15 @@ class UserGuideTests(unittest.TestCase):
             self.assertIn('README', document)
         self.assertIn('普通人', self.agents)
         self.assertIn('实际界面中的按钮名称', self.agents)
+
+    def test_project_work_and_release_paths_stay_in_the_requested_folder(self):
+        self.assertIn('只在 `D:\\pdf分割` 文件夹及其子目录内工作', self.agents)
+        self.assertIn('不得在其他目录另建或修改项目文件', self.agents)
+        self.assertIn('只在 `D:\\pdf分割` 文件夹及其子目录内工作', self.readme)
+        workflow = (ROOT / '.github/workflows/windows.yml').read_text(encoding='utf-8-sig')
+        self.assertIn("Join-Path $env:GITHUB_WORKSPACE 'StudyNote'", workflow)
+        self.assertNotIn('RUNNER_TEMP', workflow)
+        self.assertIn('/StudyNote/', (ROOT / '.gitignore').read_text(encoding='utf-8-sig'))
 
 
 if __name__ == '__main__':

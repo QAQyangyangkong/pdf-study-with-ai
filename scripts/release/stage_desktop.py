@@ -25,6 +25,15 @@ def _output(path):
     return path
 
 
+def release_directory(root, output=None):
+    """Keep release files under the project, resolving traversal and links."""
+    root = Path(root).resolve()
+    output = (Path(output) if output else root / "StudyNote").resolve()
+    if output == root or not output.is_relative_to(root):
+        raise ValueError("发布目录必须位于项目文件夹内的子目录。")
+    return _output(output)
+
+
 def _hash(path):
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -128,6 +137,9 @@ def verify_portable(desktop, backend, output):
 def main(argv=None):
     parser = argparse.ArgumentParser(description="整理 StudyNote 独立程序与安装包")
     commands = parser.add_subparsers(dest="command", required=True)
+    directory = commands.add_parser("directory", help="核对发布目录位于项目文件夹内")
+    directory.add_argument("--root", required=True)
+    directory.add_argument("--output")
     portable = commands.add_parser("portable", help="复制独立程序与普通用户使用说明")
     portable.add_argument("--source", required=True)
     portable.add_argument("--output", required=True)
@@ -141,7 +153,9 @@ def main(argv=None):
     verify.add_argument("--output", required=True)
     args = parser.parse_args(argv)
     try:
-        if args.command == "portable":
+        if args.command == "directory":
+            result = release_directory(args.root, args.output)
+        elif args.command == "portable":
             result = stage_portable(args.source, args.output, args.readme)
         elif args.command == "installer":
             result = stage_installer(args.source, args.output)
