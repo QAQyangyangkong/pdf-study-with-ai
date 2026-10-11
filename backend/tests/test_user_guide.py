@@ -12,12 +12,15 @@ class UserGuideTests(unittest.TestCase):
         self.readme = (ROOT / 'README.md').read_text(encoding='utf-8-sig')
         self.agents = (ROOT / 'AGENTS.md').read_text(encoding='utf-8-sig')
 
-    def test_installation_filename_matches_the_desktop_release(self):
+    def test_direct_program_and_optional_installer_match_the_desktop_release(self):
         config = json.loads((ROOT / 'apps/desktop/src-tauri/tauri.conf.json').read_text(encoding='utf-8-sig'))
         filename = f"{config['productName']}_{config['version']}_x64-setup.exe"
         self.assertIn(filename, self.readme)
-        self.assertIn('`D:\\pdf分割` 文件夹最外层', self.readme)
-        self.assertNotIn('本机安装文件位于 `D:\\pdf分割\\apps', self.readme)
+        self.assertIn(f"{config['productName']}.exe", self.readme)
+        self.assertIn('`D:\\StudyNote`', self.readme)
+        self.assertIn('`D:\\StudyNote\\installers`', self.readme)
+        self.assertIn('studynote-backend.exe', self.readme)
+        self.assertNotIn('本机安装文件就在 **`D:\\pdf分割`', self.readme)
         self.assertIn('开始菜单', self.readme)
         self.assertIn('nsis', config['bundle']['targets'])
 

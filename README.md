@@ -4,15 +4,17 @@ StudyNote 是一个把 PDF 教材整理成学习笔记的 Windows 电脑软件�
 
 ## 普通用户使用教程
 
-第一次使用，建议先试“安装 → 导入一本教材 → 自己写一条笔记 → 保存”。这几步不需要配置 AI。
+第一次使用，建议先试“打开软件 → 导入一本教材 → 自己写一条笔记 → 保存”。这几步不需要配置 AI。
 
-### 1. 安装并打开
+### 1. 直接打开软件
 
-1. 找到安装文件 **StudyNote_0.2.0_x64-setup.exe**，连续点击两次打开，按窗口提示点击“下一步”“安装”，等待完成。安装时保持电脑联网，软件可能需要下载运行组件。
-2. 点击屏幕下方的 **Windows 标志（开始菜单）**，输入 **StudyNote**，再点击搜索到的 StudyNote 打开。
+1. 按住键盘上的 **Windows 标志键**，再按 **E**，打开文件管理窗口。点击窗口顶部的地址栏，输入 **`D:\StudyNote`**，再按回车。
+2. 找到 **StudyNote.exe**，连续点击两次，就会打开软件，不需要先安装。文件夹里的 **使用说明.txt** 也可以双击阅读。
 3. 第一次看到欢迎窗口时，点击 **先离线使用**，就可以开始阅读、写笔记和导出。以后也能随时配置 AI。
 
-本机安装文件就在 **`D:\pdf分割` 文件夹最外层**，名字是 **StudyNote_0.2.0_x64-setup.exe**。按住键盘上的 Windows 标志键，再按 E，打开文件管理窗口；点击窗口顶部的地址栏，粘贴 `D:\pdf分割` 并按回车，即可找到安装文件，无需进入里面的其他文件夹。如果你是从其他人那里收到软件，请让对方提供上述 `.exe` 安装文件。
+**请保留整个 StudyNote 文件夹。** 其中的 `studynote-backend.exe` 是软件需要的后台文件，打开 StudyNote.exe 时会自动使用它。给别人复制软件时，也要复制整个文件夹。学习资料另存于本机用户目录，换电脑前请在软件里备份资料。
+
+如果希望安装后从 **开始菜单** 打开，可以进入 **`D:\StudyNote\installers`** 文件夹，双击 **StudyNote_0.2.0_x64-setup.exe**，按提示完成安装。安装时保持联网，可能需要下载运行组件。项目源码放在 `D:\pdf分割`；日常使用只需打开 `D:\StudyNote`。
 
 ### 2. 放入自己的教材
 
@@ -60,6 +62,7 @@ AI 生成以及“验证已保存的主模型”可能产生服务商费用，�
 - **不知道资料存在哪里：** 打开 **备份与导出**，查看页面下方的 **当前资料保存位置**。平时直接在软件里操作即可。
 - **关闭时提示有未保存内容：** 点击“取消”留在当前页面，再点击 **保存笔记**。
 - **试卷分析还不能用：** 这是后续功能入口，目前先使用教材和笔记功能。
+- **其他电脑打开时提示缺少 WebView2：** 这是软件显示界面所需的系统组件，请使用安装版按提示补齐，或请提供软件的人协助。
 
 ## 已实现
 
@@ -72,7 +75,7 @@ AI 生成以及“验证已保存的主模型”可能产生服务商费用，�
 
 ## 开发者说明：环境与启动
 
-以下命令供维护或开发软件的人使用；普通用户完成上面的安装即可。技术栈为 **React + TypeScript + shadcn/ui + Tailwind CSS + Tiptap + Tauri 2 + Python Sidecar + PyMuPDF + SQLite FTS5**。当前仓库即 StudyNote 项目根目录。
+以下命令供维护或开发软件的人使用；普通用户双击上述程序即可。技术栈为 **React + TypeScript + shadcn/ui + Tailwind CSS + Tiptap + Tauri 2 + Python Sidecar + PyMuPDF + SQLite FTS5**。当前仓库即 StudyNote 项目根目录。
 
 Windows 10/11 x64，Node.js 24、pnpm 11.25、Python 3.14、Rust stable、Visual Studio C++ Build Tools、WebView2。
 
@@ -88,16 +91,24 @@ pnpm dev
 ```powershell
 pnpm check          # 后端、迁移、前端单测、类型和生产构建
 pnpm test:e2e       # Edge 中的完整离线业务流程
-pnpm build:desktop  # 检查、Python 打包、Tauri 安装包和原生启动验证
+pnpm build:portable # 检查、打包直接启动版并从发布目录验证
+pnpm build:installer # 将已生成并验证的程序封装为安装包
+pnpm build:desktop  # 先生成并验证直接启动版，再封装安装包
 ```
 
-目标电脑无需安装 Python，需要 WebView2；首次安装可能联网获取运行时。安装包位置见 [Windows 构建](docs/release/windows.md)。
+目标电脑无需安装 Python 或 Node.js，需要 WebView2。安装版可联网获取缺少的运行组件。输出位置见 [Windows 构建](docs/release/windows.md)。
 
-桌面构建及原生启动验证成功后，会自动把安装包复制到项目根目录（本机为 `D:\pdf分割`），保留同名文件，方便寻找。安装包属于生成文件，不加入 Git。
+发布文件放在源码目录以外：本机直接启动版为 `D:\StudyNote\StudyNote.exe`，后台文件和使用说明与它放在一起；安装包为 `D:\StudyNote\installers\StudyNote_0.2.0_x64-setup.exe`。默认使用项目旁边的 StudyNote 文件夹，也可用 STUDYNOTE_RELEASE_DIR 指定外部目录。构建会先验证外部目录中的程序，再封装安装包；生成的安装包会移出源码目录，旧的根目录安装包也会清理。
+
+修改代码后先重新运行 build:portable，再运行 build:installer；build:desktop 会按顺序完成两步。直接启动验证以发布文件夹为工作目录，清除项目的 Python 导入路径，用绝对路径保存测试报告。
+
+安装包封装前会用 SHA256 核对实际打包的主程序和后台文件是否与已验证的直接启动版一致；文件不同或缺失时停止并提示重新生成。封装时保留主程序原有字节，保证使用的是同一组已验证程序。
+
+直接启动构建会明确把已打包的后台程序放到主程序旁边，因此首次构建也无需依靠旧安装包留下的文件。
 
 ## 数据与隐私
 
-新安装使用 `%LOCALAPPDATA%\StudyNote`；检测到旧版 `%LOCALAPPDATA%\StudyDesk\study.sqlite3` 时沿用旧目录。可用 STUDYNOTE_DATA_DIR 指定隔离目录。导入复制原文件，不改写教材。仅在确认 AI 请求后发送预览文本。Key 不进入前端响应、日志或 ZIP 备份。
+直接启动版与安装版都默认使用 `%LOCALAPPDATA%\StudyNote`；检测到旧版 `%LOCALAPPDATA%\StudyDesk\study.sqlite3` 时沿用旧目录。可用 STUDYNOTE_DATA_DIR 指定隔离目录。导入复制原文件，不改写教材。仅在确认 AI 请求后发送预览文本。Key 不进入前端响应、日志或 ZIP 备份。
 
 API Key 保存在当前 Windows 用户的系统凭据管理器，每个工作区使用独立凭据。旧版 DPAPI 文件首次读取时自动迁移，系统保存成功后删除旧文件。数据库 v1/v2 自动备份并升级至 v3，重建已有笔记的 FTS5 索引。
 
@@ -115,4 +126,6 @@ apps/desktop：React 与 Rust；backend：Python 业务；packages/contracts：�
 
 所有改动须更新测试、通过检查并创建 Git commit，遵循 AGENTS.md。每一步修改都要实时同步 README 中的使用、开发或验证说明；普通用户教程使用实际按钮名称，开发命令单独说明。
 
-使用教程的 4 项自动校验会核对安装文件版本及根目录位置、实际界面控件名称、普通用户与开发者步骤的区分，以及 README 实时同步规则，避免说明与软件不一致。
+使用教程的 4 项自动校验会核对直接启动程序与独立安装包的位置、文件版本、实际界面控件名称、普通用户与开发者步骤的区分，以及 README 实时同步规则，避免说明与软件不一致。
+
+发布整理脚本 `scripts/release/stage_desktop.py` 精确复制独立程序 `StudyNote.exe`、后台程序及带 UTF-8 BOM 的 `使用说明.txt`，教程仅取开发者说明之前的普通用户内容；所有输入预检并校验复制结果，保留发布目录中的无关文件，不包含源码、数据库或 Key。安装包只有在发布副本校验一致后才删除源生成文件。新增 7 项发布测试覆盖独立版文件内容、缺失输入、无关文件保留、安装包失败保护、实际打包输入一致性及命令退出状态，每一步调整同步维护此说明。
