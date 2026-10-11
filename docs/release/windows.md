@@ -4,8 +4,11 @@
 
 输出：
 
+- StudyNote_0.2.0_x64-setup.exe，位于项目根目录（本机为 D:\pdf分割），方便直接找到并安装。
 - apps/desktop/src-tauri/target/release/studynote-desktop.exe；单独复制时同时携带同目录 studynote-backend.exe。
 - apps/desktop/src-tauri/target/release/bundle/nsis/StudyNote_0.2.0_x64-setup.exe。
+
+原生启动验证成功后，构建脚本自动把同名安装包复制到项目根目录；原构建产物保留。根目录安装包不加入 Git。
 
 scripts/release/smoke.ps1 在隔离目录隐藏启动真正的桌面程序；只有 React 加载、Rust IPC 与打包 Python 返回 workspace 后生成报告并退出。
 

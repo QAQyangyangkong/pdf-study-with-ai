@@ -19,6 +19,7 @@ tmp/
 *.jpeg
 node_modules/
 target/
+/StudyNote_*-setup.exe
 *.tsbuildinfo
 apps/desktop/src-tauri/gen/
 .env

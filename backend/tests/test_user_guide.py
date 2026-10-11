@@ -16,6 +16,8 @@ class UserGuideTests(unittest.TestCase):
         config = json.loads((ROOT / 'apps/desktop/src-tauri/tauri.conf.json').read_text(encoding='utf-8-sig'))
         filename = f"{config['productName']}_{config['version']}_x64-setup.exe"
         self.assertIn(filename, self.readme)
+        self.assertIn('`D:\\pdf分割` 文件夹最外层', self.readme)
+        self.assertNotIn('本机安装文件位于 `D:\\pdf分割\\apps', self.readme)
         self.assertIn('开始菜单', self.readme)
         self.assertIn('nsis', config['bundle']['targets'])
 

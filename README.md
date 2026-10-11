@@ -12,7 +12,7 @@ StudyNote 是一个把 PDF 教材整理成学习笔记的 Windows 电脑软件�
 2. 点击屏幕下方的 **Windows 标志（开始菜单）**，输入 **StudyNote**，再点击搜索到的 StudyNote 打开。
 3. 第一次看到欢迎窗口时，点击 **先离线使用**，就可以开始阅读、写笔记和导出。以后也能随时配置 AI。
 
-本机安装文件位于 `D:\pdf分割\apps\desktop\src-tauri\target\release\bundle\nsis` 文件夹。按住键盘上的 Windows 标志键，再按 E，打开文件管理窗口；点击窗口顶部的地址栏，粘贴这段文件夹地址并按回车，即可找到安装文件。如果你是从其他人那里收到软件，请让对方提供上述 `.exe` 安装文件。
+本机安装文件就在 **`D:\pdf分割` 文件夹最外层**，名字是 **StudyNote_0.2.0_x64-setup.exe**。按住键盘上的 Windows 标志键，再按 E，打开文件管理窗口；点击窗口顶部的地址栏，粘贴 `D:\pdf分割` 并按回车，即可找到安装文件，无需进入里面的其他文件夹。如果你是从其他人那里收到软件，请让对方提供上述 `.exe` 安装文件。
 
 ### 2. 放入自己的教材
 
@@ -93,6 +93,8 @@ pnpm build:desktop  # 检查、Python 打包、Tauri 安装包和原生启动验
 
 目标电脑无需安装 Python，需要 WebView2；首次安装可能联网获取运行时。安装包位置见 [Windows 构建](docs/release/windows.md)。
 
+桌面构建及原生启动验证成功后，会自动把安装包复制到项目根目录（本机为 `D:\pdf分割`），保留同名文件，方便寻找。安装包属于生成文件，不加入 Git。
+
 ## 数据与隐私
 
 新安装使用 `%LOCALAPPDATA%\StudyNote`；检测到旧版 `%LOCALAPPDATA%\StudyDesk\study.sqlite3` 时沿用旧目录。可用 STUDYNOTE_DATA_DIR 指定隔离目录。导入复制原文件，不改写教材。仅在确认 AI 请求后发送预览文本。Key 不进入前端响应、日志或 ZIP 备份。
@@ -113,4 +115,4 @@ apps/desktop：React 与 Rust；backend：Python 业务；packages/contracts：�
 
 所有改动须更新测试、通过检查并创建 Git commit，遵循 AGENTS.md。每一步修改都要实时同步 README 中的使用、开发或验证说明；普通用户教程使用实际按钮名称，开发命令单独说明。
 
-使用教程新增 4 项自动校验，核对安装文件版本、实际界面控件名称、普通用户与开发者步骤的区分，以及 README 实时同步规则，避免说明与软件不一致。
+使用教程的 4 项自动校验会核对安装文件版本及根目录位置、实际界面控件名称、普通用户与开发者步骤的区分，以及 README 实时同步规则，避免说明与软件不一致。
